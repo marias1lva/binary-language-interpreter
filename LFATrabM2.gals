@@ -1,0 +1,45 @@
+#Options
+GenerateScanner = true
+GenerateParser = true
+Language = Java
+ScannerName = Lexico
+ParserName = Sintatico
+SemanticName = Semantico
+ScannerCaseSensitive = true
+ScannerTable = Full
+Input = String
+Parser = SLR
+#RegularDefinitions
+
+#Tokens
+ : [\ \n\t\r\s]+
+ 
+show: "Show"
+log: "Log"
+ 
+igual: "="
+fim: ";"
+abrePar: "("
+fechaPar: ")"
+soma: "+"
+subtracao: "-"
+multiplicacao: "*"
+divisao: "/"
+exponenciacao: "^"
+ 
+variavel: [a-zA-Z]+
+numero: [0-1]+
+#NonTerminals
+<programa>
+<comando>
+<expressao>
+<termo>
+<potencia>
+<fator>
+#Grammar
+<programa> ::= <programa> <comando> | <comando>;
+<comando> ::= variavel #1 igual <expressao> fim #2 | show abrePar <expressao> fechaPar fim #3;
+<expressao> ::= <expressao> soma <termo> #4 | <expressao> subtracao <termo> #5 | <termo>;
+<termo> ::= <termo> multiplicacao <potencia> #6 | <termo> divisao <potencia> #7 | <potencia>;
+<potencia> ::= <fator> exponenciacao <potencia> #8 | <fator>;
+<fator> ::= numero #9 | variavel #10 | abrePar <expressao> fechaPar | log abrePar <expressao> fechaPar #11;

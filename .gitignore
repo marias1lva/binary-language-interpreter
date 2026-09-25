@@ -1,0 +1,17 @@
+# Compilados
+*.class
+bin/
+out/
+target/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Material interno (nao vai para a entrega)
+analise-videos.md
+roteiro-video.md
+
+# Sistema
+Thumbs.db
+desktop.ini
