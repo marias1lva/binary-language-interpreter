@@ -1,7 +1,10 @@
 # Interpretador de linguagem binária com GALS
 
 Trabalho M2 — Linguagens Formais e Autômatos
+
 Universidade do Vale do Itajaí · Prof. Alex Luciano Roesler Rese
+
+---
 
 Implementação de uma gramática livre de contexto e de um interpretador para uma pequena linguagem de programação em que **todos os valores são números binários inteiros sem sinal**. O analisador léxico e o sintático são gerados pelo [Web GALS](https://lia-univali.github.io/Web-GALS/); o analisador semântico, que é o interpretador propriamente dito, foi escrito em Java.
 
