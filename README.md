@@ -210,9 +210,3 @@ Casos de rejeição, cada um em seu arquivo:
 | `erro-sem-sinal.txt` | `A = 1; B = 1 - 10;` | semântico — resultado negativo |
 | `erro-divisao-zero.txt` | `Show ( 1 / 0 );` | semântico — divisão por zero |
 | `erro-variavel-sem-valor.txt` | `Show ( Z );` | semântico — variável não inicializada |
-
-## Decisões que vale confirmar com o professor
-
-1. **Base do `Log`.** O enunciado não especifica. Adotei **base 2**, por ser a única em que o logaritmo de um número binário é naturalmente um inteiro sem sinal — `Log(X)` corresponde à posição do bit mais significativo. Para trocar, basta alterar a ação `#11` (e, no caso de uma forma `Log(base, valor)`, acrescentar uma produção à gramática).
-2. **`Show` aceita expressão.** O enunciado menciona "exibição dos valores de variáveis". A produção adotada é `show abrePar <expressao> fechaPar`, que aceita variável e também expressão — um superconjunto do exigido. Para restringir ao enunciado literal, trocar `<expressao>` por `variavel` nessa produção e fazer a ação `#3` ler a variável diretamente da tabela de símbolos.
-3. **Identificadores apenas com letras** (`variavel: [a-zA-Z]+`). Dígitos não foram permitidos em identificadores porque os únicos dígitos da linguagem são 0 e 1, o que tornaria nomes como `B1` ambíguos na leitura. Para permitir, usar `variavel: [a-zA-Z][a-zA-Z0-1]*`.
