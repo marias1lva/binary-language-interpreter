@@ -4,16 +4,16 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.math.BigInteger;
 
-/**
- * Programa principal do interpretador.
- *
- * Uso:   java Main exemplo.txt
- *        java Main               (roda o exemplo do enunciado)
- *
+/*
  * Trabalho M2 - Linguagens Formais e Automatos - UNIVALI
+ *
+ * Classe principal: le o arquivo com o programa e roda o interpretador.
+ * Uso: java Main exemplo.txt
+ * Se nao passar nenhum arquivo, roda o exemplo do enunciado.
  */
 public class Main {
 
+    // exemplo do enunciado (usado quando nao passa arquivo)
     private static final String EXEMPLO_DO_ENUNCIADO =
             "A = 10;\n" +
             "B = 11;\n" +
@@ -21,6 +21,7 @@ public class Main {
             "Show ( B );\n";
 
     public static void main(String[] args) {
+        // le o arquivo passado como argumento
         String fonte;
         try {
             fonte = (args.length > 0)
@@ -31,10 +32,17 @@ public class Main {
             return;
         }
 
+        // alguns editores colocam um BOM no comeco do arquivo, entao tiramos ele
+        if (!fonte.isEmpty() && fonte.charAt(0) == '\uFEFF') {
+            fonte = fonte.substring(1);
+        }
+
+        // mostra o codigo que foi lido
         System.out.println("---------- codigo-fonte ----------");
         System.out.println(fonte.trim());
         System.out.println("---------- saida -----------------");
 
+        // lexico e sintatico foram gerados pelo GALS, o semantico foi feito por nos
         Lexico lexico = new Lexico();
         Sintatico sintatico = new Sintatico();
         Semantico semantico = new Semantico();
@@ -42,8 +50,10 @@ public class Main {
         lexico.setInput(fonte);
 
         try {
+            // a analise e a execucao do programa acontecem juntas aqui
             sintatico.parse(lexico, semantico);
 
+            // se nao deu erro, mostra o valor final de cada variavel
             System.out.println("---------- tabela de simbolos ----");
             for (Map.Entry<String, BigInteger> e : semantico.getTabelaSimbolos().entrySet()) {
                 System.out.println("  " + e.getKey() + " = " + e.getValue().toString(2));
@@ -59,7 +69,8 @@ public class Main {
         }
     }
 
-    /** Converte a posicao absoluta devolvida pelo GALS em linha e coluna. */
+    // o GALS devolve a posicao do erro como indice no texto,
+    // aqui transformamos em linha e coluna para ficar mais facil de achar
     private static String local(String fonte, int posicao) {
         if (posicao < 0 || posicao > fonte.length()) return "";
         int linha = 1, coluna = 1;

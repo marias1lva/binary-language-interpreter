@@ -4,77 +4,54 @@ import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Analisador Semantico / Interpretador da linguagem binaria.
- *
+/*
  * Trabalho M2 - Linguagens Formais e Automatos - UNIVALI
  * Prof. Alex Luciano Roesler Rese
  *
- * O GALS gera esta classe VAZIA. Toda a interpretacao acontece aqui.
+ * Analisador semantico. O GALS gera essa classe vazia, entao foi aqui
+ * que fizemos o interpretador.
  *
- * ---------------------------------------------------------------------------
- * PONTO CENTRAL DA LINGUAGEM: tudo eh binario, do inicio ao fim.
+ * Todos os numeros da linguagem sao binarios: os literais sao lidos em
+ * base 2 e o Show tambem mostra o resultado em base 2.
  *
- *   - o literal "10" no codigo-fonte vale 2 (dois), e nao dez;
- *   - o lexico so aceita os digitos 0 e 1 (ver especificacao .gals);
- *   - o Show imprime o valor DE VOLTA EM BINARIO.
+ * Usamos BigInteger para nao ter problema de estouro como teria com int ou long.
  *
- * Por isso a leitura eh feita com new BigInteger(lexema, 2) e a escrita com
- * valor.toString(2). Se qualquer um dos dois virar base 10, a linguagem deixa
- * de ser a linguagem pedida no enunciado.
- * ---------------------------------------------------------------------------
- *
- * Usa BigInteger: o enunciado fala em "inteiros sem sinal", sem limite de bits.
- * BigInteger modela isso exatamente, sem estouro de 32/64 bits.
- *
- * Mecanismo: pilha de valores + tabela de simbolos.
+ * O interpretador usa uma pilha de valores para calcular as expressoes e
+ * uma tabela de simbolos para guardar as variaveis.
  */
 public class Semantico implements Constants {
 
-    /** Se true, o Show mostra tambem o valor em decimal entre parenteses (util para demonstrar). */
+    // se mudar para true, o Show mostra tambem o valor em decimal (ajuda nos testes)
     public static final boolean MOSTRAR_DECIMAL = false;
 
-    /**
-     * Fechamento do conjunto de valores.
-     *
-     * O conjunto da linguagem sao os inteiros binarios SEM SINAL. Tres operacoes
-     * podem produzir um resultado fora desse conjunto:
-     *
-     *   subtracao -> numero negativo      (SEMPRE erro, nao ha escolha: o valor
-     *                                      nao eh representavel na linguagem)
-     *   divisao   -> fracao               (escolha abaixo)
-     *   Log       -> numero irracional    (escolha abaixo)
-     *
-     * false = divisao e Log truncam para a parte inteira (convencao usual de
-     *         aritmetica inteira: 111 / 10 = 11)
-     * true  = divisao e Log so aceitam resultado exato, senao erro semantico
-     */
+    // false: divisao e Log descartam a parte fracionaria (ex: 111 / 10 = 11)
+    // true: divisao e Log com resultado nao exato dao erro semantico
     public static final boolean EXIGIR_RESULTADO_EXATO = false;
 
-    /** Limite de seguranca para a exponenciacao (evita travar a maquina com 10^1111111111). */
+    // limite da exponenciacao, para o programa nao travar com uma conta muito grande
     private static final int LIMITE_BITS_RESULTADO = 1_000_000;
 
+    // tabela de simbolos: nome da variavel -> valor
     private final Map<String, BigInteger> tabelaSimbolos = new LinkedHashMap<>();
+    // pilha usada para calcular as expressoes
     private final Deque<BigInteger> pilha = new ArrayDeque<>();
+    // guarda tudo que o Show imprimiu
     private final StringBuilder saida = new StringBuilder();
 
-    /** Nome da variavel do lado esquerdo da atribuicao em andamento. */
+    // variavel que vai receber o valor na atribuicao atual
     private String destino = null;
 
-    // =======================================================================
-    // Metodo chamado pelo analisador sintatico gerado pelo GALS
-    // =======================================================================
+    // chamado pelo sintatico do GALS toda vez que chega numa acao semantica (#1 a #11)
     public void executeAction(int action, Token token) throws SemanticError {
         switch (action) {
 
-            // ---- #1 : <COMANDO> ::= id #1 "=" ...
-            // Guarda o nome da variavel que vai receber o resultado.
+            // #1 - guarda o nome da variavel que vai receber o valor (o A em "A = ...")
             case 1:
                 destino = token.getLexeme();
                 break;
 
-            // ---- #2 : ... <E> #2 ";"
-            // Fim da atribuicao: tira o valor da expressao da pilha e grava.
+            // #2 - fim da atribuicao (depois do ;): tira o resultado da pilha e salva na variavel
+            // se a variavel ja existia, o valor antigo e substituido (reatribuicao)
             case 2: {
                 BigInteger valor = desempilhar(token);
                 tabelaSimbolos.put(destino, valor);
@@ -82,8 +59,7 @@ public class Semantico implements Constants {
                 break;
             }
 
-            // ---- #3 : Show "(" <E> ")" #3 ";"
-            // AQUI ESTA O DETALHE: imprime em BINARIO, nao em decimal.
+            // #3 - Show (depois do ;): tira o resultado da pilha e imprime em binario
             case 3: {
                 BigInteger valor = desempilhar(token);
                 String texto = valor.toString(2);
@@ -95,7 +71,9 @@ public class Semantico implements Constants {
                 break;
             }
 
-            // ---- #4 : soma
+            // #4 - soma
+            // o segundo operando sai primeiro da pilha, por isso o b vem antes do a
+            // (o mesmo vale para as outras operacoes)
             case 4: {
                 BigInteger b = desempilhar(token);
                 BigInteger a = desempilhar(token);
@@ -103,8 +81,8 @@ public class Semantico implements Constants {
                 break;
             }
 
-            // ---- #5 : subtracao
-            // A linguagem eh SEM SINAL: resultado negativo nao eh representavel.
+            // #5 - subtracao
+            // a linguagem e sem sinal, entao resultado negativo da erro
             case 5: {
                 BigInteger b = desempilhar(token);
                 BigInteger a = desempilhar(token);
@@ -117,7 +95,7 @@ public class Semantico implements Constants {
                 break;
             }
 
-            // ---- #6 : multiplicacao
+            // #6 - multiplicacao
             case 6: {
                 BigInteger b = desempilhar(token);
                 BigInteger a = desempilhar(token);
@@ -125,7 +103,8 @@ public class Semantico implements Constants {
                 break;
             }
 
-            // ---- #7 : divisao (inteira, pois nao existe fracao na linguagem)
+            // #7 - divisao inteira (a linguagem nao tem numero com virgula)
+            // divisao por zero da erro
             case 7: {
                 BigInteger b = desempilhar(token);
                 BigInteger a = desempilhar(token);
@@ -140,8 +119,9 @@ public class Semantico implements Constants {
                 break;
             }
 
-            // ---- #8 : exponenciacao
-            // Acao colocada DEPOIS da chamada recursiva -> associativa a DIREITA.
+            // #8 - exponenciacao
+            // fica associativa a direita por causa da gramatica:
+            // <potencia> ::= <fator> exponenciacao <potencia> #8
             case 8: {
                 BigInteger expoente = desempilhar(token);
                 BigInteger base = desempilhar(token);
@@ -149,8 +129,7 @@ public class Semantico implements Constants {
                 break;
             }
 
-            // ---- #9 : literal numerico
-            // BASE 2. Trocar para base 10 aqui quebra toda a linguagem.
+            // #9 - numero: converte o texto de base 2 para BigInteger e empilha
             case 9: {
                 try {
                     pilha.push(new BigInteger(token.getLexeme(), 2));
@@ -160,7 +139,8 @@ public class Semantico implements Constants {
                 break;
             }
 
-            // ---- #10 : uso de variavel em expressao
+            // #10 - variavel usada numa expressao: busca o valor na tabela e empilha
+            // se a variavel nunca recebeu valor, da erro
             case 10: {
                 String nome = token.getLexeme();
                 BigInteger valor = tabelaSimbolos.get(nome);
@@ -171,20 +151,19 @@ public class Semantico implements Constants {
                 break;
             }
 
-            // ---- #11 : Log
-            // Base 2: eh a base natural de uma linguagem binaria e o resultado
-            // continua sendo um inteiro sem sinal (posicao do bit mais significativo).
+            // #11 - Log na base 2 (escolhemos base 2 porque a linguagem e binaria)
+            // quando nao e exato, fica so a parte inteira. Log de zero da erro
             case 11: {
                 BigInteger x = desempilhar(token);
                 if (x.signum() <= 0) {
                     erro("Log nao esta definido para zero", token);
                 }
-                // x.bitCount() == 1 significa que x eh potencia de 2, ou seja,
-                // que o log na base 2 eh exato.
+                // bitCount() == 1 quer dizer que x e potencia de 2, ai o log e exato
                 if (EXIGIR_RESULTADO_EXATO && x.bitCount() != 1) {
                     erro("Log de " + x.toString(2) + " nao eh exato na base 2: "
                             + "a linguagem so representa inteiros", token);
                 }
+                // bitLength() - 1 da o log2 de x arredondado para baixo
                 pilha.push(BigInteger.valueOf(x.bitLength() - 1L));
                 break;
             }
@@ -194,10 +173,7 @@ public class Semantico implements Constants {
         }
     }
 
-    // =======================================================================
-    // Apoio
-    // =======================================================================
-
+    // calcula base ^ expoente, respeitando o limite de seguranca
     private BigInteger potencia(BigInteger base, BigInteger expoente, Token token) throws SemanticError {
         if (expoente.signum() == 0) {
             return BigInteger.ONE;            // x^0 = 1
@@ -206,6 +182,7 @@ public class Semantico implements Constants {
             erro("expoente grande demais para ser calculado", token);
         }
         int exp = expoente.intValue();
+        // estimativa de quantos bits o resultado vai ter
         long bitsEstimados = (long) base.bitLength() * exp;
         if (bitsEstimados > LIMITE_BITS_RESULTADO) {
             erro("resultado da exponenciacao grande demais para ser calculado", token);
@@ -213,6 +190,7 @@ public class Semantico implements Constants {
         return base.pow(exp);
     }
 
+    // tira um valor da pilha (se estiver vazia, algo deu errado na expressao)
     private BigInteger desempilhar(Token token) throws SemanticError {
         if (pilha.isEmpty()) {
             erro("expressao mal formada (pilha de valores vazia)", token);
@@ -220,6 +198,7 @@ public class Semantico implements Constants {
         return pilha.pop();
     }
 
+    // lanca o erro semantico com a posicao do token, para o Main mostrar linha e coluna
     private void erro(String mensagem, Token token) throws SemanticError {
         if (token != null) {
             throw new SemanticError(mensagem, token.getPosition());
@@ -227,10 +206,7 @@ public class Semantico implements Constants {
         throw new SemanticError(mensagem);
     }
 
-    // =======================================================================
-    // Consulta pelo programa principal
-    // =======================================================================
-
+    // usados pelo Main
     public String getSaida() { return saida.toString(); }
 
     public Map<String, BigInteger> getTabelaSimbolos() { return tabelaSimbolos; }

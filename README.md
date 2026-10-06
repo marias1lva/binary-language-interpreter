@@ -4,6 +4,8 @@ Trabalho M2 — Linguagens Formais e Autômatos
 
 Universidade do Vale do Itajaí · Prof. Alex Luciano Roesler Rese
 
+Alunos: Carlos Bernardo, Maria Eduarda Lima, Nicoly Colutti
+
 ---
 
 Implementação de uma gramática livre de contexto e de um interpretador para uma pequena linguagem de programação em que **todos os valores são números binários inteiros sem sinal**. O analisador léxico e o sintático são gerados pelo [Web GALS](https://lia-univali.github.io/Web-GALS/); o analisador semântico, que é o interpretador propriamente dito, foi escrito em Java.
@@ -33,7 +35,7 @@ Os literais estão em base 2: `10` vale 2, `11` vale 3 e `111` vale 7. A express
 | Logaritmo (base 2) | `Log ( <expressão> )` |
 | Agrupamento | `( )` |
 
-Os valores são inteiros binários sem sinal, sem limite de bits. Variáveis são sequências de letras e não precisam de declaração prévia, mas precisam ter recebido valor antes de serem usadas.
+Os valores são inteiros binários sem sinal, armazenados em `BigInteger` (sem estouro de 32/64 bits; a exponenciação tem um limite de segurança, descrito em *Convenções da implementação*). Variáveis são sequências de letras e não precisam de declaração prévia, mas precisam ter recebido valor antes de serem usadas.
 
 ## Estrutura do projeto
 
@@ -177,15 +179,28 @@ Os valores são armazenados em `BigInteger`, e não em `int`. Além de eliminar 
 
 A constante `EXIGIR_RESULTADO_EXATO`, no topo do `Semantico.java`, altera a política de truncamento: quando ativada, divisão e logaritmo com resultado não exato passam a ser erro semântico em vez de serem truncados.
 
+## Convenções da implementação
+
+O enunciado lista as operações, mas não define todos os casos. As decisões abaixo são convenções desta implementação:
+
+- **Log** em base 2, com o resultado truncado para a parte inteira: `Log ( 111 )` resulta em `10`. `Log ( 0 )` é erro semântico.
+- **Divisão** inteira, com truncamento: `111 / 10` resulta em `11`. Divisão por zero é erro semântico.
+- **Subtração** com resultado negativo é erro semântico, já que a linguagem é sem sinal.
+- **`Show`** aceita qualquer expressão, e não apenas variáveis. É um superconjunto do comportamento mínimo pedido no enunciado.
+- **Identificadores** seguem `[a-zA-Z]+` e diferenciam maiúsculas de minúsculas. O enunciado não define esse formato.
+- **Exponenciação**: por segurança, o expoente é limitado a 31 bits e o tamanho estimado do resultado a 1.000.000 de bits. Acima disso, o programa acusa erro semântico.
+
 ## Tratamento de erros
 
 Os três tipos de erro são reportados com linha e coluna:
 
 ```
 Erro lexico: Caractere não esperado (linha 1, coluna 5)
-Erro sintatico: esperado ';' (linha 2, coluna 8)
+Erro sintatico: Erro estado 13 (linha 2, coluna 1)
 Erro semantico: resultado negativo (1 - 10): a linguagem trabalha apenas com inteiros sem sinal (linha 2, coluna 9)
 ```
+
+As mensagens de erro sintático são as geradas pelo GALS e indicam o estado do analisador SLR em que o erro foi detectado.
 
 ## Testes
 
@@ -202,11 +217,18 @@ Erro semantico: resultado negativo (1 - 10): a linguagem trabalha apenas com int
 | `Show ( Log ( 10000 ) );` | `100` | logaritmo base 2 |
 | `Show ( 111 / 10 );` | `11` | divisão inteira |
 
+Expressão com as seis operações: `java -cp bin Main teste-mistura.txt`
+
+| Programa | Saída | Verifica |
+|---|---|---|
+| `A = 101; B = 11;` e `Show ( ( A + B * 10 ) ^ 10 - Log ( 10000 ) * 11 / 10 + A ^ 10 ^ 1 - ( 1000 - 10 - 1 ) );` | `10000111` | todas as operações e níveis de precedência juntos |
+
 Casos de rejeição, cada um em seu arquivo:
 
 | Arquivo | Programa | Erro esperado |
 |---|---|---|
 | `erro-lexico.txt` | `A = 2;` | léxico — dígito fora do alfabeto |
+| `erro-sintatico.txt` | `A = 10` (sem `;`) seguido de `Show ( A );` | sintático — falta o `;` |
 | `erro-sem-sinal.txt` | `A = 1; B = 1 - 10;` | semântico — resultado negativo |
 | `erro-divisao-zero.txt` | `Show ( 1 / 0 );` | semântico — divisão por zero |
 | `erro-variavel-sem-valor.txt` | `Show ( Z );` | semântico — variável não inicializada |
