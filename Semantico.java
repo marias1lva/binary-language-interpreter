@@ -18,12 +18,12 @@ import java.util.Map;
 public class Semantico implements Constants {
 
     // se true, o Show mostra tambem o valor em decimal (ajuda nos testes)
-    public static final boolean MOSTRAR_DECIMAL = false;
+    public static final boolean mostrar_decimal = false;
 
     // se true, divisao e Log com resultado nao exato dao erro em vez de truncar
-    public static final boolean EXIGIR_RESULTADO_EXATO = false;
+    public static final boolean exigir_resultado_exato = false;
 
-    private static final int LIMITE_BITS_RESULTADO = 1_000_000;
+    private static final int limite_bits_resultado = 1_000_000;
 
     private final Map<String, BigInteger> tabelaSimbolos = new LinkedHashMap<>();
     private final Deque<BigInteger> pilha = new ArrayDeque<>();
@@ -51,7 +51,7 @@ public class Semantico implements Constants {
             case 3: {
                 BigInteger valor = desempilhar(token);
                 String texto = valor.toString(2);
-                if (MOSTRAR_DECIMAL) {
+                if (mostrar_decimal) {
                     texto = texto + "  (" + valor.toString(10) + " em decimal)";
                 }
                 saida.append(texto).append(System.lineSeparator());
@@ -96,7 +96,7 @@ public class Semantico implements Constants {
                 if (b.signum() == 0) {
                     erro("divisao por zero", token);
                 }
-                if (EXIGIR_RESULTADO_EXATO && a.mod(b).signum() != 0) {
+                if (exigir_resultado_exato && a.mod(b).signum() != 0) {
                     erro("divisao nao exata (" + a.toString(2) + " / " + b.toString(2)
                             + "): a linguagem so representa inteiros", token);
                 }
@@ -142,7 +142,7 @@ public class Semantico implements Constants {
                 if (x.signum() <= 0) {
                     erro("Log nao esta definido para zero", token);
                 }
-                if (EXIGIR_RESULTADO_EXATO && x.bitCount() != 1) {
+                if (exigir_resultado_exato && x.bitCount() != 1) {
                     erro("Log de " + x.toString(2) + " nao eh exato na base 2: "
                             + "a linguagem so representa inteiros", token);
                 }
@@ -164,7 +164,7 @@ public class Semantico implements Constants {
         }
         int exp = expoente.intValue();
         long bitsEstimados = (long) base.bitLength() * exp;
-        if (bitsEstimados > LIMITE_BITS_RESULTADO) {
+        if (bitsEstimados > limite_bits_resultado) {
             erro("resultado da exponenciacao grande demais para ser calculado", token);
         }
         return base.pow(exp);

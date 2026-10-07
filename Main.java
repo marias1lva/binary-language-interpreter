@@ -14,7 +14,7 @@ import java.math.BigInteger;
 public class Main {
 
     // exemplo do enunciado (usado quando nao passa arquivo)
-    private static final String EXEMPLO_DO_ENUNCIADO =
+    private static final String exemplo_enunciado =
             "A = 10;\n" +
             "B = 11;\n" +
             "B = 111 + A * B;\n" +
@@ -26,7 +26,7 @@ public class Main {
         try {
             fonte = (args.length > 0)
                     ? new String(Files.readAllBytes(Path.of(args[0])), StandardCharsets.UTF_8)
-                    : EXEMPLO_DO_ENUNCIADO;
+                    : exemplo_enunciado;
         } catch (Exception e) {
             System.err.println("Nao foi possivel ler o arquivo: " + e.getMessage());
             return;
